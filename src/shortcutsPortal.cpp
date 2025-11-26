@@ -23,6 +23,7 @@
 #include <obs.h>
 
 #include <QMessageBox>
+#include <QWindow>
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
 #include <private/qdesktopunixservices_p.h>
