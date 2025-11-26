@@ -82,7 +82,7 @@ private:
     QMap<QString, Shortcut> m_shortcuts;
 
     const QString m_handleToken = "obs_portal_shortcuts";
-    const QString m_sessionHandleToken = "obs_portal_shortcuts";
+    const QString m_sessionHandleToken = "obs_portal_shortcuts_session";
 
     QMainWindow* m_parentWindow = nullptr;
 
