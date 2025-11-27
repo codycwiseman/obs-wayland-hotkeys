@@ -40,6 +40,12 @@ static const QString freedesktopDest = u"org.freedesktop.portal.Desktop"_s;
 static const QString freedesktopPath = u"/org/freedesktop/portal/desktop"_s;
 static const QString globalShortcutsInterface = u"org.freedesktop.portal.GlobalShortcuts"_s;
 
+ShortcutsPortal::ShortcutsPortal(QObject* parent)
+    : QObject(parent)
+{
+    obs_frontend_add_event_callback(obsFrontendEvent, this);
+}
+
 void ShortcutsPortal::createSession()
 {
     QDBusMessage createSessionCall = QDBusMessage::createMethodCall(
@@ -385,6 +391,8 @@ void ShortcutsPortal::configureShortcuts()
 
 ShortcutsPortal::~ShortcutsPortal()
 {
+    obs_frontend_remove_event_callback(obsFrontendEvent, this);
+
     QDBusConnection::sessionBus().disconnect(
         freedesktopDest,
         freedesktopPath,
@@ -405,6 +413,18 @@ ShortcutsPortal::~ShortcutsPortal()
             QDBusObjectPath, QString, qulonglong, QVariantMap
         ))
     );
+}
+
+void ShortcutsPortal::obsFrontendEvent(enum obs_frontend_event event, void* private_data)
+{
+    auto* portal = static_cast<ShortcutsPortal*>(private_data);
+    if (event == OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED ||
+        event == OBS_FRONTEND_EVENT_FINISHED_LOADING) {
+        if (!portal->m_sessionObjPath.path().isEmpty()) {
+            portal->createShortcuts();
+            portal->bindShortcuts();
+        }
+    }
 }
 
 #include "moc_shortcutsPortal.cpp"

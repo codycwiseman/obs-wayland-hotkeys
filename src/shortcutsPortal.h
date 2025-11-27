@@ -21,6 +21,7 @@
 #include <QMainWindow>
 #include <QtDBus/QtDBus>
 #include <functional>
+#include <obs-frontend-api.h>
 
 struct PortalShortcut
 {
@@ -34,6 +35,7 @@ class ShortcutsPortal : public QObject
 {
     Q_OBJECT
 public:
+    explicit ShortcutsPortal(QObject* parent = nullptr);
     ~ShortcutsPortal();
 
     void createSession();
@@ -55,6 +57,8 @@ public:
     {
         m_parentWindow = window;
     }
+
+    static void obsFrontendEvent(enum obs_frontend_event event, void* private_data);
 
 public Q_SLOTS:
     void onCreateSessionResponse(unsigned int response, const QVariantMap& results);
