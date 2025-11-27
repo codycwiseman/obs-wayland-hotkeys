@@ -132,16 +132,27 @@ void ShortcutsPortal::createShortcuts()
         return true;
     }, &validSources);
 
-    // Store a pointer to the valid sources set temporarily for the hotkey enumeration callback
-    m_currentValidSources = &validSources;
+    struct EnumContext {
+        ShortcutsPortal* portal;
+        QSet<void*>* validSources;
+        QSet<QString> addedDescriptions;
+    };
+
+    EnumContext ctx;
+    ctx.portal = this;
+    ctx.validSources = &validSources;
 
     obs_enum_hotkeys(
         [](void* data, obs_hotkey_id id, obs_hotkey_t* binding) {
-            auto t = static_cast<ShortcutsPortal*>(data);
-            auto* validSources = static_cast<QSet<void*>*>(t->m_currentValidSources);
-
+            auto* ctx = static_cast<EnumContext*>(data);
+            
             const char* nameStr = obs_hotkey_get_name(binding);
-            if (nameStr && QString::fromUtf8(nameStr) == u"OBSBasic.SelectScene"_s) {
+            QString qNameStr = nameStr ? QString::fromUtf8(nameStr) : QString();
+
+            // Filter out internal scene switching and scene item visibility toggles
+            if (qNameStr == u"OBSBasic.SelectScene"_s || 
+                qNameStr.contains(u"show_scene_item"_s) || 
+                qNameStr.contains(u"hide_scene_item"_s)) {
                 return true;
             }
 
@@ -149,7 +160,7 @@ void ShortcutsPortal::createShortcuts()
             QString description = descStr ? QString::fromUtf8(descStr) : QString();
 
             if (description.isEmpty()) {
-                 description = nameStr ? QString::fromUtf8(nameStr) : "Unknown Hotkey";
+                 description = !qNameStr.isEmpty() ? qNameStr : "Unknown Hotkey";
             }
 
             QString namePrefix;
@@ -160,7 +171,7 @@ void ShortcutsPortal::createShortcuts()
                 const char* name = nullptr;
                 if (type == OBS_HOTKEY_REGISTERER_SOURCE) {
                     // Only access the source if we verified it exists
-                    if (validSources && validSources->contains(registerer)) {
+                    if (ctx->validSources && ctx->validSources->contains(registerer)) {
                         name = obs_source_get_name(static_cast<obs_source_t*>(registerer));
                     } else {
                         blog(LOG_WARNING, "[ShortcutsPortal] Skipping invalid source pointer for hotkey ID %lu", (unsigned long)id);
@@ -182,22 +193,25 @@ void ShortcutsPortal::createShortcuts()
                 description = QString("[%1] %2").arg(namePrefix, description);
             }
 
+            // Deduplicate: if we already added a shortcut with this exact description, skip it.
+            if (ctx->addedDescriptions.contains(description)) {
+                return true;
+            }
+            ctx->addedDescriptions.insert(description);
+
             // Use the unique ID as the key to avoid collisions (e.g. scenes share the same name)
             // Prefix with "hk_" to ensure it doesn't start with a digit, which is invalid for DBus object path elements
             QString uniqueId = "hk_" + QString::number(id);
 
-            t->createShortcut(uniqueId, description, [id](bool pressed) {
+            ctx->portal->createShortcut(uniqueId, description, [id](bool pressed) {
                 obs_hotkey_trigger_routed_callback(id, pressed);
             });
 
             return true;
         },
-        this
+        &ctx
     );
     
-    // Clear the temporary pointer set
-    m_currentValidSources = nullptr;
-
     // KDE and Gnome don't allow binding multiple key combinations to the same action like obs does...
     // so add custom "toggle" shortcuts for actions that can be started / stopped
 
