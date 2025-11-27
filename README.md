@@ -1,4 +1,4 @@
-# OBS Wayland Hotkeys
+# Wayland Hotkeys Cody (OBS Wayland Hotkeys fork) 
 
 An OBS Studio plugin to integrate OBS hotkeys with the [Wayland Global Shortcuts Portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.GlobalShortcuts.html).
 
