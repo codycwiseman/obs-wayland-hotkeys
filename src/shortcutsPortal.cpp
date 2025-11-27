@@ -423,10 +423,16 @@ void ShortcutsPortal::obsFrontendEvent(enum obs_frontend_event event, void* priv
 {
     auto* portal = static_cast<ShortcutsPortal*>(private_data);
     if (event == OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED ||
-        event == OBS_FRONTEND_EVENT_FINISHED_LOADING) {
+        event == OBS_FRONTEND_EVENT_FINISHED_LOADING ||
+        event == OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED ||
+        event == OBS_FRONTEND_EVENT_PROFILE_CHANGED) {
         if (!portal->m_sessionObjPath.path().isEmpty()) {
-            portal->createShortcuts();
-            portal->bindShortcuts();
+            // Use invokeMethod to ensure we run on the main thread's event loop
+            // and avoid potential race conditions during state changes.
+            QMetaObject::invokeMethod(portal, [portal]() {
+                portal->createShortcuts();
+                portal->bindShortcuts();
+            }, Qt::QueuedConnection);
         }
     }
 }
