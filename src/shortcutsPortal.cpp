@@ -93,8 +93,8 @@ int ShortcutsPortal::getVersion()
 };
 
 void ShortcutsPortal::createShortcut(
-    const char* name,
-    const char* description,
+    const QString& name,
+    const QString& description,
     const std::function<void(bool pressed)>& callback
 )
 {
@@ -118,7 +118,7 @@ void ShortcutsPortal::createShortcuts()
             // Use the unique ID as the key to avoid collisions (e.g. scenes share the same name)
             QString uniqueId = QString::number(id);
 
-            t->createShortcut(qPrintable(uniqueId), description, [id](bool pressed) {
+            t->createShortcut(uniqueId, description, [id](bool pressed) {
                 obs_hotkey_trigger_routed_callback(id, pressed);
             });
 
@@ -201,6 +201,30 @@ void ShortcutsPortal::createShortcuts()
             obs_frontend_set_preview_program_mode(true);
         }
     });
+
+    struct obs_frontend_source_list scenes = {};
+    obs_frontend_get_scenes(&scenes);
+
+    for (size_t i = 0; i < scenes.sources.num; i++) {
+        obs_source_t* source = scenes.sources.array[i];
+        const char* name = obs_source_get_name(source);
+        QString qName = QString::fromUtf8(name);
+
+        QString id = "scene_" + qName;
+        QString description = "Switch to scene '" + qName + "'";
+
+        createShortcut(id, description, [qName](bool pressed) {
+            if (!pressed)
+                return;
+
+            obs_source_t* scene = obs_get_source_by_name(qName.toUtf8().constData());
+            if (scene) {
+                obs_frontend_set_current_scene(scene);
+                obs_source_release(scene);
+            }
+        });
+    }
+    obs_frontend_source_list_free(&scenes);
 }
 
 void ShortcutsPortal::onCreateSessionResponse(uint, const QVariantMap& results)
