@@ -50,7 +50,6 @@ ShortcutsPortal::ShortcutsPortal(QObject* parent)
 
 void ShortcutsPortal::createSession()
 {
-    blog(LOG_INFO, "[ShortcutsPortal] Creating session request...");
     QDBusMessage createSessionCall = QDBusMessage::createMethodCall(
         freedesktopDest,
         freedesktopPath,
@@ -114,7 +113,6 @@ void ShortcutsPortal::createShortcut(
 
 void ShortcutsPortal::createShortcuts()
 {
-    blog(LOG_INFO, "[ShortcutsPortal] Re-creating shortcuts list...");
     m_shortcuts.clear();
 
     // Collect valid source pointers to ensure safety
@@ -290,8 +288,6 @@ void ShortcutsPortal::createShortcuts()
     struct obs_frontend_source_list scenes = {};
     obs_frontend_get_scenes(&scenes);
 
-    blog(LOG_INFO, "[ShortcutsPortal] Found %lu scenes", (unsigned long)scenes.sources.num);
-
     for (size_t i = 0; i < scenes.sources.num; i++) {
         obs_source_t* source = scenes.sources.array[i];
         const char* name = obs_source_get_name(source);
@@ -324,7 +320,6 @@ void ShortcutsPortal::onCreateSessionResponse(unsigned int, const QVariantMap& r
     if (results.contains(u"session_handle"_s)) {
         QString sessionHandle = results[u"session_handle"_s].toString();
         this->m_sessionObjPath = QDBusObjectPath(sessionHandle);
-        blog(LOG_INFO, "[ShortcutsPortal] Session created successfully: %s", sessionHandle.toUtf8().constData());
     } else {
         blog(LOG_WARNING, "[ShortcutsPortal] Session creation response did not contain session_handle");
     };
@@ -363,8 +358,6 @@ void ShortcutsPortal::onCreateSessionResponse(unsigned int, const QVariantMap& r
     if (m_isLoaded) {
         createShortcuts();
         bindShortcuts();
-    } else {
-        blog(LOG_INFO, "[ShortcutsPortal] Deferring shortcut binding until OBS finishes loading");
     }
 }
 
@@ -394,7 +387,6 @@ void ShortcutsPortal::onDeactivatedSignal(
 
 void ShortcutsPortal::bindShortcuts()
 {
-    blog(LOG_INFO, "[ShortcutsPortal] Binding %d shortcuts...", (int)m_shortcuts.size());
     QDBusMessage bindShortcuts = QDBusMessage::createMethodCall(
         freedesktopDest,
         freedesktopPath,
@@ -431,8 +423,6 @@ void ShortcutsPortal::bindShortcuts()
         auto errMsg = QMessageBox(m_parentWindow);
         errMsg.critical(m_parentWindow, u"Failed to bind shortcuts"_s, msg.errorMessage());
         blog(LOG_ERROR, "[ShortcutsPortal] Failed to bind shortcuts: %s", msg.errorMessage().toUtf8().constData());
-    } else {
-        blog(LOG_INFO, "[ShortcutsPortal] Shortcuts bound successfully");
     }
 }
 
@@ -526,8 +516,6 @@ void ShortcutsPortal::obsFrontendEvent(enum obs_frontend_event event, void* priv
         event == OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED ||
         event == OBS_FRONTEND_EVENT_PROFILE_CHANGED) {
         
-        blog(LOG_INFO, "[ShortcutsPortal] Frontend event received: %d", event);
-
         if (portal->m_isLoaded && !portal->m_sessionObjPath.path().isEmpty()) {
             // Use invokeMethod to ensure we run on the main thread's event loop
             // and avoid potential race conditions during state changes.
@@ -535,8 +523,6 @@ void ShortcutsPortal::obsFrontendEvent(enum obs_frontend_event event, void* priv
                 portal->createShortcuts();
                 portal->bindShortcuts();
             }, Qt::QueuedConnection);
-        } else {
-            blog(LOG_INFO, "[ShortcutsPortal] Ignoring event, session not yet created or OBS not loaded");
         }
     }
 }
