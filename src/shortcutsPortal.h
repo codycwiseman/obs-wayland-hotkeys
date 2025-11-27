@@ -20,10 +20,7 @@
 
 #include <QMainWindow>
 #include <QtDBus/QtDBus>
-
 #include <functional>
-#include <obs-frontend-api.h>
-#include <obs-hotkey.h>
 
 struct PortalShortcut
 {

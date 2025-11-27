@@ -73,7 +73,7 @@ void ShortcutsPortal::createSession()
         u"org.freedesktop.portal.Request"_s,
         u"Response"_s,
         this,
-        SLOT(onCreateSessionResponse(uint, QVariantMap))
+        SLOT(onCreateSessionResponse(unsigned int, QVariantMap))
     );
 }
 
@@ -236,7 +236,7 @@ void ShortcutsPortal::onCreateSessionResponse(unsigned int, const QVariantMap& r
         u"org.freedesktop.portal.Request"_s,
         u"Response"_s,
         this,
-        SLOT(onCreateSessionResponse(uint, QVariantMap))
+        SLOT(onCreateSessionResponse(unsigned int, QVariantMap))
     );
 
     QDBusConnection::sessionBus().connect(
