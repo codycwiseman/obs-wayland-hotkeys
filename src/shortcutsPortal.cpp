@@ -23,6 +23,7 @@
 #include <obs.h>
 
 #include <QMessageBox>
+#include <QRegularExpression>
 #include <QWindow>
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
@@ -207,6 +208,8 @@ void ShortcutsPortal::createShortcuts()
         QString qName = QString::fromUtf8(name);
 
         QString id = "scene_" + qName;
+        id.replace(QRegularExpression(u"[^a-zA-Z0-9_]"_s), u"_"_s);
+
         QString description = "Switch to scene '" + qName + "'";
 
         createShortcut(id, description, [qName](bool pressed) {
