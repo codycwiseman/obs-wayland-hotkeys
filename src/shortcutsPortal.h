@@ -62,7 +62,7 @@ public:
     static void obsFrontendEvent(enum obs_frontend_event event, void* private_data);
 
 public Q_SLOTS:
-    void onCreateSessionResponse(unsigned int response, const QVariantMap& results);
+    void onCreateSessionResponse(uint response, const QVariantMap& results);
 
     void onActivatedSignal(
         const QDBusObjectPath& sessionHandle,

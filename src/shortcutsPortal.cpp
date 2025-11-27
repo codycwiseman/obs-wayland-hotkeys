@@ -24,7 +24,6 @@
 
 #include <QCryptographicHash>
 #include <QMessageBox>
-#include <QRegularExpression>
 #include <QSet>
 #include <QWindow>
 
@@ -69,13 +68,12 @@ void ShortcutsPortal::createSession()
     if (call.type() != QDBusMessage::ReplyMessage) {
         auto errMsg = QMessageBox(m_parentWindow);
         errMsg.critical(m_parentWindow, u"Failed to create global shortcuts session"_s, call.errorMessage());
-        blog(LOG_ERROR, "[ShortcutsPortal] Failed to create session: %s", call.errorMessage().toUtf8().constData());
     }
 
     this->m_responseHandle = call.arguments().first().value<QDBusObjectPath>();
 
-    qDBusRegisterMetaType<QPair<QString, QVariantMap>>();
-    qDBusRegisterMetaType<QList<QPair<QString, QVariantMap>>>();
+    qDBusRegisterMetaType<std::pair<QString, QVariantMap>>();
+    qDBusRegisterMetaType<QList<std::pair<QString, QVariantMap>>>();
 
     QDBusConnection::sessionBus().connect(
         freedesktopDest,
@@ -83,7 +81,7 @@ void ShortcutsPortal::createSession()
         u"org.freedesktop.portal.Request"_s,
         u"Response"_s,
         this,
-        SLOT(onCreateSessionResponse(unsigned int, QVariantMap))
+        SLOT(onCreateSessionResponse(uint, QVariantMap))
     );
 }
 
@@ -315,7 +313,7 @@ void ShortcutsPortal::createShortcuts()
     obs_frontend_source_list_free(&scenes);
 }
 
-void ShortcutsPortal::onCreateSessionResponse(unsigned int, const QVariantMap& results)
+void ShortcutsPortal::onCreateSessionResponse(uint, const QVariantMap& results)
 {
     if (results.contains(u"session_handle"_s)) {
         QString sessionHandle = results[u"session_handle"_s].toString();
@@ -330,7 +328,7 @@ void ShortcutsPortal::onCreateSessionResponse(unsigned int, const QVariantMap& r
         u"org.freedesktop.portal.Request"_s,
         u"Response"_s,
         this,
-        SLOT(onCreateSessionResponse(unsigned int, QVariantMap))
+        SLOT(onCreateSessionResponse(uint, QVariantMap))
     );
 
     QDBusConnection::sessionBus().connect(
@@ -394,10 +392,10 @@ void ShortcutsPortal::bindShortcuts()
         u"BindShortcuts"_s
     );
 
-    QList<QPair<QString, QVariantMap>> shortcuts;
+    QList<std::pair<QString, QVariantMap>> shortcuts;
 
     for (auto shortcut : m_shortcuts) {
-        QPair<QString, QVariantMap> dbusShortcut;
+        std::pair<QString, QVariantMap> dbusShortcut;
 
         QVariantMap shortcutOptions;
         dbusShortcut.first = shortcut.name;
