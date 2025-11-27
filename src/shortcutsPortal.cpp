@@ -120,21 +120,32 @@ void ShortcutsPortal::createShortcuts()
         [](void* data, obs_hotkey_id id, obs_hotkey_t* binding) {
             auto t = static_cast<ShortcutsPortal*>(data);
 
-            QString description = QString::fromUtf8(obs_hotkey_get_description(binding));
+            const char* descStr = obs_hotkey_get_description(binding);
+            QString description = descStr ? QString::fromUtf8(descStr) : QString();
+
+            if (description.isEmpty()) {
+                 const char* nameStr = obs_hotkey_get_name(binding);
+                 description = nameStr ? QString::fromUtf8(nameStr) : "Unknown Hotkey";
+            }
 
             QString namePrefix;
             obs_hotkey_registerer_type type = obs_hotkey_get_registerer_type(binding);
             void* registerer = obs_hotkey_get_registerer(binding);
 
             if (registerer) {
+                const char* name = nullptr;
                 if (type == OBS_HOTKEY_REGISTERER_SOURCE) {
-                    namePrefix = QString::fromUtf8(obs_source_get_name(static_cast<obs_source_t*>(registerer)));
+                    name = obs_source_get_name(static_cast<obs_source_t*>(registerer));
                 } else if (type == OBS_HOTKEY_REGISTERER_OUTPUT) {
-                    namePrefix = QString::fromUtf8(obs_output_get_name(static_cast<obs_output_t*>(registerer)));
+                    name = obs_output_get_name(static_cast<obs_output_t*>(registerer));
                 } else if (type == OBS_HOTKEY_REGISTERER_ENCODER) {
-                    namePrefix = QString::fromUtf8(obs_encoder_get_name(static_cast<obs_encoder_t*>(registerer)));
+                    name = obs_encoder_get_name(static_cast<obs_encoder_t*>(registerer));
                 } else if (type == OBS_HOTKEY_REGISTERER_SERVICE) {
-                    namePrefix = QString::fromUtf8(obs_service_get_name(static_cast<obs_service_t*>(registerer)));
+                    name = obs_service_get_name(static_cast<obs_service_t*>(registerer));
+                }
+                
+                if (name) {
+                    namePrefix = QString::fromUtf8(name);
                 }
             }
 
