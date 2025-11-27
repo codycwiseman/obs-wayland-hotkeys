@@ -138,13 +138,18 @@ void ShortcutsPortal::createShortcuts()
     obs_enum_hotkeys(
         [](void* data, obs_hotkey_id id, obs_hotkey_t* binding) {
             auto t = static_cast<ShortcutsPortal*>(data);
+            auto t = static_cast<ShortcutsPortal*>(data);
             auto* validSources = static_cast<QSet<void*>*>(t->m_currentValidSources);
+
+            const char* nameStr = obs_hotkey_get_name(binding);
+            if (nameStr && QString::fromUtf8(nameStr) == u"OBSBasic.SelectScene"_s) {
+                return true;
+            }
 
             const char* descStr = obs_hotkey_get_description(binding);
             QString description = descStr ? QString::fromUtf8(descStr) : QString();
 
             if (description.isEmpty()) {
-                 const char* nameStr = obs_hotkey_get_name(binding);
                  description = nameStr ? QString::fromUtf8(nameStr) : "Unknown Hotkey";
             }
 
